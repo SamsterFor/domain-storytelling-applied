@@ -1,26 +1,177 @@
-# Requirements
-```sh
-dotnet --version 
-```
-Should be 10 or higher. If not install the dotnet 10 SDK.
+# Domain Storytelling Applied
 
-# Getting the code
+Det här projektet är en liten övning i taktisk Domain-Driven Design (DDD). Domänen handlar om att boka en lokal under en bestämd tidsperiod.
+
+Projektet innehåller ingen applikation, databas eller webb-API. Fokus ligger på domänklasser och körbara tester.
+
+## Krav
+
+.NET 10 SDK eller senare krävs.
+
 ```sh
-git clone https://github.com/MartinLindblomForefront/domain-storytelling-applied.git
+dotnet --version
 ```
 
-# Building
+## Bygga och testa
+
+Kör kommandona från projektets rot:
+
 ```sh
-cd domain-storytelling-applied
 dotnet build
-```
-
-# Running tests
-```sh
-cd domain-storytelling-applied
 dotnet test
 ```
 
-# Structure
-Domain objects goes in `TE.DomainStorytellingApplied.Domain` \
-Test cases goes in `TE.DomainStorytellingApplied.Domain.Tests`
+Testerna är skrivna med xUnit och använder Shouldly för assertions.
+
+## Projektstruktur
+
+```text
+TE.DomainStorytellingApplied.Domain/
+├── Aggregates/
+│   ├── Bookings/
+│   │   ├── AggregateRoots/
+│   │   │   └── Booking.cs
+│   │   └── ValueObjects/
+│   │       ├── BookingId.cs
+│   │       ├── BookingStatus.cs
+│   │       └── TimeSlot.cs
+│   └── Venues/
+│       ├── AggregateRoots/
+│       │   └── Venue.cs
+│       └── ValueObjects/
+│           └── VenueId.cs
+└── DomainServices/
+    └── BookingAvailabilityService.cs
+
+TE.DomainStorytellingApplied.Domain.Tests/
+└── Aggregates/
+    ├── Bookings/
+    └── Venues/
+```
+
+`BookingAvailabilityService.cs` är ännu en tom platshållare. Tillgänglighetskontroll mellan flera bokningar är inte implementerad.
+
+## Domänmodellen
+
+Modellen består för närvarande av två Aggregates:
+
+```text
+Booking Aggregate
+└── Booking – Aggregate Root och Entity
+    ├── BookingId – Value Object
+    ├── VenueId – referens till en Venue
+    ├── TimeSlot – Value Object
+    └── BookingStatus – enum
+
+Venue Aggregate
+└── Venue – Aggregate Root och Entity
+    ├── VenueId – Value Object
+    ├── Name
+    └── Capacity
+```
+
+### Booking
+
+`Booking` är både Entity och Aggregate Root för en bokning. Den identifieras av sitt `BookingId`, refererar till en lokal genom `VenueId` och innehåller bokningens `TimeSlot`.
+
+En ny bokning får alltid status `Pending`. Metoden `Confirm()` ändrar status till `Confirmed`. En redan bekräftad bokning kan inte bekräftas igen.
+
+Två `Booking`-objekt med samma `BookingId` betraktas som samma Entity, även om deras övriga tillstånd skiljer sig.
+
+### Venue
+
+`Venue` betyder lokal och är både Entity och Aggregate Root för en lokal. Den har ett `VenueId`, ett namn och en kapacitet.
+
+Följande regler skyddas av `Venue`:
+
+- Namnet får inte vara tomt eller bara innehålla blanksteg.
+- Kapaciteten måste vara större än noll.
+
+Två `Venue`-objekt med samma `VenueId` betraktas som samma Entity. Identiteten avgör alltså vilken lokal det är, inte namnet eller kapaciteten.
+
+### BookingId och VenueId
+
+`BookingId` och `VenueId` är Value Objects som kapslar in var sitt `Guid`.
+
+De är inte Entities. Ett ID har ingen egen livscykel utan representerar identiteten hos en Entity. Två ID-objekt med samma `Guid` är lika. `Guid.Empty` accepteras inte.
+
+### TimeSlot
+
+`TimeSlot` är ett oföränderligt Value Object med en start- och sluttid.
+
+Det skyddar regeln att starttiden alltid måste vara före sluttiden. Två `TimeSlot` med samma start- och sluttid är lika.
+
+### BookingStatus
+
+`BookingStatus` är en enum med två tillstånd:
+
+- `Pending` – bokningen väntar på bekräftelse.
+- `Confirmed` – bokningen är bekräftad.
+
+## Tester
+
+Teststrukturen speglar domänprojektets struktur. Testnamnen använder formen `Given_When_Should` för att visa utgångsläge, handling och förväntat resultat.
+
+### BookingTests
+
+Verifierar att:
+
+- en giltig bokning kan skapas
+- en ny bokning får status `Pending`
+- en väntande bokning kan bekräftas
+- en bekräftad bokning inte kan bekräftas igen
+- bokningar med samma `BookingId` är samma Entity
+- bokningar med olika ID:n inte är samma Entity
+
+### BookingIdTests
+
+Verifierar att:
+
+- ett giltigt `Guid` kan användas
+- `Guid.Empty` nekas
+- två `BookingId` med samma värde är lika
+- två `BookingId` med olika värden inte är lika
+
+### TimeSlotTests
+
+Verifierar att:
+
+- start före slut skapar en giltig tidsperiod
+- samma start- och sluttid nekas
+- start efter slut nekas
+- två tidsperioder med samma värden är lika
+- två tidsperioder med olika värden inte är lika
+
+### VenueTests
+
+Verifierar att:
+
+- en lokal kan skapas med giltiga uppgifter
+- tomt namn och blanksteg nekas
+- noll och negativ kapacitet nekas
+- lokaler med samma `VenueId` är samma Entity
+- lokaler med olika ID:n inte är samma Entity
+
+### VenueIdTests
+
+Verifierar att:
+
+- ett giltigt `Guid` kan användas
+- `Guid.Empty` nekas
+- två `VenueId` med samma värde är lika
+- två `VenueId` med olika värden inte är lika
+
+### SanityTests
+
+Innehåller ett enkelt kontrolltest som visar att testprojektet och Shouldly fungerar.
+
+## Det som ännu inte ingår
+
+Modellen är medvetet liten. Följande delar är inte implementerade ännu:
+
+- kontroll av om en lokal redan är bokad
+- extra lokaler i en bokning
+- betalning
+- domänhändelser
+- repositories och lagring
+- applikationslager eller användargränssnitt
