@@ -1,3 +1,4 @@
+using TE.DomainStorytellingApplied.Domain.Aggregates.Bookers.ValueObjects;
 using TE.DomainStorytellingApplied.Domain.Aggregates.Bookings.AggregateRoots;
 using TE.DomainStorytellingApplied.Domain.Aggregates.Bookings.ValueObjects;
 using TE.DomainStorytellingApplied.Domain.Aggregates.Venues.ValueObjects;
@@ -10,12 +11,14 @@ public class BookingTests
     public void GivenValidDetails_WhenCreatingBooking_ShouldCreatePendingBooking()
     {
         var id = new BookingId(Guid.NewGuid());
+        var bookerId = new BookerId(Guid.NewGuid());
         var venueId = new VenueId(Guid.NewGuid());
         var timeSlot = CreateTimeSlot();
 
-        var booking = new Booking(id, venueId, timeSlot);
+        var booking = new Booking(id, bookerId, venueId, timeSlot);
 
         booking.Id.ShouldBe(id);
+        booking.BookerId.ShouldBe(bookerId);
         booking.VenueId.ShouldBe(venueId);
         booking.TimeSlot.ShouldBe(timeSlot);
         booking.Status.ShouldBe(BookingStatus.Pending);
@@ -66,6 +69,7 @@ public class BookingTests
     {
         return new Booking(
             id ?? new BookingId(Guid.NewGuid()),
+            new BookerId(Guid.NewGuid()),
             new VenueId(Guid.NewGuid()),
             CreateTimeSlot());
     }

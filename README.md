@@ -28,6 +28,11 @@ Testerna är skrivna med xUnit och använder Shouldly för assertions.
 ```text
 TE.DomainStorytellingApplied.Domain/
 ├── Aggregates/
+│   ├── Bookers/
+│   │   ├── AggregateRoots/
+│   │   │   └── Booker.cs
+│   │   └── ValueObjects/
+│   │       └── BookerId.cs
 │   ├── Bookings/
 │   │   ├── AggregateRoots/
 │   │   │   └── Booking.cs
@@ -45,6 +50,7 @@ TE.DomainStorytellingApplied.Domain/
 
 TE.DomainStorytellingApplied.Domain.Tests/
 ├── Aggregates/
+│   ├── Bookers/
 │   ├── Bookings/
 │   └── Venues/
 └── DomainServices/
@@ -53,12 +59,18 @@ TE.DomainStorytellingApplied.Domain.Tests/
 
 ## Domänmodellen
 
-Modellen består för närvarande av två Aggregates:
+Modellen består för närvarande av tre Aggregates:
 
 ```text
+Booker Aggregate
+└── Booker – Aggregate Root och Entity
+    ├── BookerId – Value Object
+    └── Name
+
 Booking Aggregate
 └── Booking – Aggregate Root och Entity
     ├── BookingId – Value Object
+    ├── BookerId – referens till en Booker
     ├── VenueId – referens till en Venue
     ├── TimeSlot – Value Object
     └── BookingStatus – enum
@@ -72,9 +84,17 @@ Venue Aggregate
 BookingAvailabilityService – Domain Service
 ```
 
+### Booker
+
+`Booker` representerar personen som gör en bokning. Den är både Entity och Aggregate Root och identifieras av sitt `BookerId`.
+
+Bokarens namn får inte vara tomt eller bara innehålla blanksteg. Två `Booker`-objekt med samma `BookerId` betraktas som samma person, även om namnet skiljer sig.
+
+En `Booking` innehåller inte hela `Booker`-objektet utan refererar till bokaren genom `BookerId`. Det gör att bokaren och bokningen kan ha separata livscykler.
+
 ### Booking
 
-`Booking` är både Entity och Aggregate Root för en bokning. Den identifieras av sitt `BookingId`, refererar till en lokal genom `VenueId` och innehåller bokningens `TimeSlot`.
+`Booking` är både Entity och Aggregate Root för en bokning. Den identifieras av sitt `BookingId`, refererar till bokaren genom `BookerId`, refererar till en lokal genom `VenueId` och innehåller bokningens `TimeSlot`.
 
 En ny bokning får alltid status `Pending`. Metoden `Confirm()` ändrar status till `Confirmed`. En redan bekräftad bokning kan inte bekräftas igen.
 
@@ -91,9 +111,9 @@ Följande regler skyddas av `Venue`:
 
 Två `Venue`-objekt med samma `VenueId` betraktas som samma Entity. Identiteten avgör alltså vilken lokal det är, inte namnet eller kapaciteten.
 
-### BookingId och VenueId
+### BookerId, BookingId och VenueId
 
-`BookingId` och `VenueId` är Value Objects som kapslar in var sitt `Guid`.
+`BookerId`, `BookingId` och `VenueId` är Value Objects som kapslar in var sitt `Guid`.
 
 De är inte Entities. Ett ID har ingen egen livscykel utan representerar identiteten hos en Entity. Två ID-objekt med samma `Guid` är lika. `Guid.Empty` accepteras inte.
 
@@ -130,11 +150,30 @@ Kontrollen ligger i en Domain Service eftersom den behöver jämföra flera bokn
 
 Teststrukturen speglar domänprojektets struktur. Testnamnen använder formen `Given_When_Should` för att visa utgångsläge, handling och förväntat resultat.
 
+### BookerTests
+
+Verifierar att:
+
+- en bokare kan skapas med giltigt ID och namn
+- tomt namn och blanksteg nekas
+- bokare med samma `BookerId` är samma Entity
+- bokare med olika ID:n inte är samma Entity
+
+### BookerIdTests
+
+Verifierar att:
+
+- ett giltigt `Guid` kan användas
+- `Guid.Empty` nekas
+- två `BookerId` med samma värde är lika
+- två `BookerId` med olika värden inte är lika
+
 ### BookingTests
 
 Verifierar att:
 
 - en giltig bokning kan skapas
+- bokningen refererar till rätt bokare genom `BookerId`
 - en ny bokning får status `Pending`
 - en väntande bokning kan bekräftas
 - en bekräftad bokning inte kan bekräftas igen

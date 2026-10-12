@@ -1,3 +1,4 @@
+using TE.DomainStorytellingApplied.Domain.Aggregates.Bookers.ValueObjects;
 using TE.DomainStorytellingApplied.Domain.Aggregates.Bookings.AggregateRoots;
 using TE.DomainStorytellingApplied.Domain.Aggregates.Bookings.ValueObjects;
 using TE.DomainStorytellingApplied.Domain.Aggregates.Venues.ValueObjects;
@@ -64,7 +65,11 @@ public class BookingAvailabilityServiceTests
 
     private static Booking CreateBooking(VenueId venueId, TimeSlot timeSlot)
     {
-        return new Booking(new BookingId(Guid.NewGuid()), venueId, timeSlot);
+        return new Booking(
+            new BookingId(Guid.NewGuid()),
+            new BookerId(Guid.NewGuid()),
+            venueId,
+            timeSlot);
     }
 
     private static TimeSlot CreateTimeSlot(int startHour, int endHour)
