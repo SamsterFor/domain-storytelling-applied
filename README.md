@@ -44,12 +44,12 @@ TE.DomainStorytellingApplied.Domain/
     └── BookingAvailabilityService.cs
 
 TE.DomainStorytellingApplied.Domain.Tests/
-└── Aggregates/
-    ├── Bookings/
-    └── Venues/
+├── Aggregates/
+│   ├── Bookings/
+│   └── Venues/
+└── DomainServices/
+    └── BookingAvailabilityServiceTests.cs
 ```
-
-`BookingAvailabilityService.cs` är ännu en tom platshållare. Tillgänglighetskontroll mellan flera bokningar är inte implementerad.
 
 ## Domänmodellen
 
@@ -68,6 +68,8 @@ Venue Aggregate
     ├── VenueId – Value Object
     ├── Name
     └── Capacity
+
+BookingAvailabilityService – Domain Service
 ```
 
 ### Booking
@@ -101,12 +103,28 @@ De är inte Entities. Ett ID har ingen egen livscykel utan representerar identit
 
 Det skyddar regeln att starttiden alltid måste vara före sluttiden. Två `TimeSlot` med samma start- och sluttid är lika.
 
+Metoden `OverlapsWith()` avgör om två tidsperioder överlappar. Tidsperioder som endast möts vid samma tidpunkt överlappar inte. Det innebär exempelvis att en bokning som slutar 11:00 inte blockerar en ny bokning som börjar 11:00.
+
 ### BookingStatus
 
 `BookingStatus` är en enum med två tillstånd:
 
 - `Pending` – bokningen väntar på bekräftelse.
 - `Confirmed` – bokningen är bekräftad.
+
+### BookingAvailabilityService
+
+`BookingAvailabilityService` är en Domain Service som kontrollerar om en lokal är ledig under en önskad tidsperiod.
+
+Tjänsten tar emot:
+
+- lokalens `VenueId`
+- önskad `TimeSlot`
+- befintliga bokningar
+
+Lokalen är inte ledig om det finns en befintlig bokning med samma `VenueId` och en överlappande `TimeSlot`. Bokningar för andra lokaler påverkar inte resultatet.
+
+Kontrollen ligger i en Domain Service eftersom den behöver jämföra flera bokningar. Själva regeln för tidsöverlappning ligger däremot i `TimeSlot`, eftersom den regeln hör till tidsperioden.
 
 ## Tester
 
@@ -141,6 +159,8 @@ Verifierar att:
 - start efter slut nekas
 - två tidsperioder med samma värden är lika
 - två tidsperioder med olika värden inte är lika
+- överlappande tidsperioder identifieras
+- tidsperioder som bara möts vid start och slut inte överlappar
 
 ### VenueTests
 
@@ -165,11 +185,19 @@ Verifierar att:
 
 Innehåller ett enkelt kontrolltest som visar att testprojektet och Shouldly fungerar.
 
+### BookingAvailabilityServiceTests
+
+Verifierar att:
+
+- en lokal utan befintliga bokningar är ledig
+- en bokning för en annan lokal inte blockerar
+- samma lokal är ledig när tiderna inte överlappar
+- samma lokal inte är ledig när tiderna överlappar
+
 ## Det som ännu inte ingår
 
 Modellen är medvetet liten. Följande delar är inte implementerade ännu:
 
-- kontroll av om en lokal redan är bokad
 - extra lokaler i en bokning
 - betalning
 - domänhändelser

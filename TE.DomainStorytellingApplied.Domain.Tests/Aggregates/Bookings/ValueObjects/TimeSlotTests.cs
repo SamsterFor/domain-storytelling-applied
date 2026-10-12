@@ -57,4 +57,28 @@ public class TimeSlotTests
 
         first.ShouldNotBe(second);
     }
+
+    [Fact]
+    public void GivenOverlappingTimeSlots_WhenCheckingOverlap_ShouldReturnTrue()
+    {
+        var start = new DateTimeOffset(2026, 10, 9, 10, 0, 0, TimeSpan.Zero);
+        var first = new TimeSlot(start, start.AddHours(1));
+        var second = new TimeSlot(start.AddMinutes(30), start.AddHours(2));
+
+        var overlaps = first.OverlapsWith(second);
+
+        overlaps.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void GivenTimeSlotsThatTouch_WhenCheckingOverlap_ShouldReturnFalse()
+    {
+        var start = new DateTimeOffset(2026, 10, 9, 10, 0, 0, TimeSpan.Zero);
+        var first = new TimeSlot(start, start.AddHours(1));
+        var second = new TimeSlot(start.AddHours(1), start.AddHours(2));
+
+        var overlaps = first.OverlapsWith(second);
+
+        overlaps.ShouldBeFalse();
+    }
 }

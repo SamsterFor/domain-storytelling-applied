@@ -17,4 +17,11 @@ public sealed record TimeSlot
     public DateTimeOffset Start { get; }
 
     public DateTimeOffset End { get; }
+
+    public bool OverlapsWith(TimeSlot other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return Start < other.End && other.Start < End;
+    }
 }
